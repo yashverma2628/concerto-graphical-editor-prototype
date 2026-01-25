@@ -3,7 +3,7 @@
 > **GSoC 2026 Proof of Concept** for [Accord Project](https://accordproject.org/)
 > *A visual, drag-and-drop editor for defining Concerto data models.*
 
-![Concerto Editor Demo](https://res.cloudinary.com/dprxaeuwi/image/upload/v1769243865/wmiyycqnb9zg5yyzpke6.jpg)
+![Concerto Editor Demo](https://res.cloudinary.com/dprxaeuwi/image/upload/v1769353158/sld4afwdzdacdfpammqo.jpg)
 *(Note: I am currently recording a full demo video. The screenshot above shows the current React Flow implementation.)*
 
 ## 💡 The Vision

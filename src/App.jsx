@@ -1,4 +1,4 @@
-import React, { useState, useRef, useCallback, useEffect } from 'react';
+import React, { useState, useRef, useCallback } from 'react';
 import ReactFlow, {
   ReactFlowProvider,
   addEdge,
@@ -40,11 +40,8 @@ const App = () => {
   const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
   const [edges, setEdges, onEdgesChange] = useEdgesState([]);
   const [reactFlowInstance, setReactFlowInstance] = useState(null);
-  
-  // NEW: State for the selected node
   const [selectedNodeId, setSelectedNodeId] = useState(null);
 
-  // Helper: Get the actual node object based on the ID
   const selectedNode = nodes.find((n) => n.id === selectedNodeId);
 
   const onConnect = useCallback(
@@ -61,7 +58,7 @@ const App = () => {
     (event) => {
       event.preventDefault();
       const type = event.dataTransfer.getData('application/reactflow');
-      if (typeof type === 'undefined' || !type) return;
+      if (!type) return;
 
       const position = reactFlowInstance.screenToFlowPosition({
         x: event.clientX,
@@ -79,7 +76,7 @@ const App = () => {
       };
 
       setNodes((nds) => nds.concat(newNode));
-      setSelectedNodeId(newNode.id); // Auto-select the new node
+      setSelectedNodeId(newNode.id);
     },
     [reactFlowInstance],
   );
@@ -89,29 +86,52 @@ const App = () => {
     event.dataTransfer.effectAllowed = 'move';
   };
 
-  // NEW: Handle Node Click
   const onNodeClick = useCallback((event, node) => {
     setSelectedNodeId(node.id);
   }, []);
 
-  // NEW: Handle Canvas Click (Deselect)
   const onPaneClick = useCallback(() => {
     setSelectedNodeId(null);
   }, []);
 
-  // NEW: Update Node Name
+  // --- NEW LOGIC: EDITING DATA ---
+
+  // 1. Rename Node
   const onNameChange = (evt) => {
     const newName = evt.target.value;
+    updateNodeData(selectedNodeId, { label: newName });
+  };
+
+  // 2. Add Field
+  const onAddField = () => {
+    if (!selectedNode) return;
+    const newFields = [...(selectedNode.data.fields || []), { type: 'String', name: 'newProp' }];
+    updateNodeData(selectedNodeId, { fields: newFields });
+  };
+
+  // 3. Update Field (Name or Type)
+  const onUpdateField = (index, key, value) => {
+    if (!selectedNode) return;
+    const newFields = [...selectedNode.data.fields];
+    newFields[index] = { ...newFields[index], [key]: value };
+    updateNodeData(selectedNodeId, { fields: newFields });
+  };
+
+  // 4. Remove Field
+  const onRemoveField = (index) => {
+    if (!selectedNode) return;
+    const newFields = selectedNode.data.fields.filter((_, i) => i !== index);
+    updateNodeData(selectedNodeId, { fields: newFields });
+  };
+
+  // Helper to update node data immutably
+  const updateNodeData = (nodeId, newData) => {
     setNodes((nds) =>
       nds.map((node) => {
-        if (node.id === selectedNodeId) {
-          // Create a new data object so React "sees" the change
+        if (node.id === nodeId) {
           return {
             ...node,
-            data: {
-              ...node.data,
-              label: newName,
-            },
+            data: { ...node.data, ...newData },
           };
         }
         return node;
@@ -151,25 +171,60 @@ const App = () => {
         </ReactFlow>
       </div>
 
-      {/* NEW: RIGHT SIDEBAR (PROPERTIES) */}
+      {/* RIGHT SIDEBAR (PROPERTIES) */}
       <aside className="right-sidebar">
         <div className="panel-title">Properties</div>
         {selectedNode ? (
           <div>
-            <label style={{ fontSize: '12px', display: 'block', marginBottom: '5px' }}>Name</label>
-            <input 
-              type="text" 
-              className="panel-input"
-              value={selectedNode.data.label} 
-              onChange={onNameChange} 
-            />
+            <div className="panel-section">
+              <label style={{ fontSize: '12px', fontWeight: 'bold' }}>Concept Name</label>
+              <input 
+                type="text" 
+                className="panel-input"
+                value={selectedNode.data.label} 
+                onChange={onNameChange} 
+              />
+            </div>
+
+            <div className="panel-section">
+              <label style={{ fontSize: '12px', fontWeight: 'bold' }}>Fields</label>
+              {selectedNode.data.fields && selectedNode.data.fields.map((field, index) => (
+                <div key={index} className="field-row">
+                  {/* Field Type Select */}
+                  <select 
+                    className="field-type-select"
+                    value={field.type}
+                    onChange={(e) => onUpdateField(index, 'type', e.target.value)}
+                  >
+                    <option value="String">String</option>
+                    <option value="Integer">Integer</option>
+                    <option value="Boolean">Boolean</option>
+                    <option value="DateTime">Date</option>
+                    <option value="Double">Double</option>
+                  </select>
+
+                  {/* Field Name Input */}
+                  <input 
+                    type="text" 
+                    className="field-name-input"
+                    value={field.name}
+                    onChange={(e) => onUpdateField(index, 'name', e.target.value)}
+                  />
+
+                  {/* Delete Button */}
+                  <button className="btn-delete" onClick={() => onRemoveField(index)}>×</button>
+                </div>
+              ))}
+
+              <button className="btn-add" onClick={onAddField}>+ Add Field</button>
+            </div>
+
             <div className="info-text">
-              Selected ID: {selectedNode.id} <br/>
-              Type: {selectedNode.type}
+              ID: {selectedNode.id} • Type: {selectedNode.type}
             </div>
           </div>
         ) : (
-          <div className="info-text">Select a node to edit its properties.</div>
+          <div className="info-text">Click a node to edit properties.</div>
         )}
       </aside>
     </div>
