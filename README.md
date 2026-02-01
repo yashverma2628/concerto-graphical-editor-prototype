@@ -1,4 +1,4 @@
-# 🎨 Concerto Web Editor (Prototype)
+# 🎨 Concerto Web Editor (Prototype) [![accord project](https://img.shields.io/badge/powered%20by-accord%20project-19C6C8.svg)](https://www.accordproject.org/)
 
 > **GSoC 2026 Proof of Concept** for [Accord Project](https://accordproject.org/)
 > *A visual, drag-and-drop editor for defining Concerto data models.*
